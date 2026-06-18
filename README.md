@@ -87,3 +87,7 @@ El servidor Flask expone dos endpoints principales en formato JSON:
 ## 📄 Licencia
 
 Este proyecto está bajo la Licencia MIT.
+
+---
+*Practica de curso kaggle completada*
+
