@@ -839,29 +839,41 @@ body {
     background: rgba(255, 255, 255, 0.2);
 }
 
+/* Base styles for mobile close button */
+.mobile-close-btn {
+    display: none;
+}
+
 /* -------------------------------------------------------------
  * Responsive Layout (Tablet & Mobile)
  * ------------------------------------------------------------- */
 @media (max-width: 992px) {
     .app-main {
         grid-template-columns: 100%;
-        grid-template-rows: 1fr 1fr;
-        height: auto;
-        overflow: visible;
+        height: 100%;
     }
     
-    body {
-        overflow-y: auto;
-        height: auto;
+    /* Show detail section as fixed overlay on mobile only when active */
+    .detail-section {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 950;
+        border-radius: 0;
+        border: none;
+        max-height: none;
     }
     
-    .app-container {
-        height: auto;
-        min-height: 100vh;
+    .app-container.active-detail .detail-section {
+        display: flex;
     }
     
-    .feed-section, .detail-section {
-        max-height: 600px;
+    .mobile-close-btn {
+        display: inline-flex;
+        margin-right: 0.75rem;
     }
 }
 

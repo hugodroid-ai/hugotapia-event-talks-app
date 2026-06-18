@@ -26,10 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
     const exportCsvBtn = document.getElementById('export-csv-btn');
+    const closeDetailBtn = document.getElementById('close-detail-btn');
+    const resetDraftBtn = document.getElementById('reset-draft-btn');
+    const emptySearchState = document.getElementById('empty-search-state');
+    const clearSearchBtn = document.getElementById('clear-search-btn');
 
     // Global state
     let releaseData = null;
     let selectedItem = null;
+    let defaultDraft = '';
 
     // Initial Fetch
     initializeTheme();
@@ -42,6 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
     tweetBtn.addEventListener('click', publishTweet);
     themeToggle.addEventListener('click', toggleTheme);
     exportCsvBtn.addEventListener('click', exportToCSV);
+    closeDetailBtn.addEventListener('click', closeMobileDetail);
+    resetDraftBtn.addEventListener('click', resetDraftTweet);
+    clearSearchBtn.addEventListener('click', clearSearch);
 
     /* -------------------------------------------------------------
      * API Fetching
@@ -227,6 +235,9 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyDetailState.classList.add('hidden');
         detailCard.classList.remove('hidden');
 
+        // Toggle active details container on mobile
+        document.querySelector('.app-container').classList.add('active-detail');
+
         // Populate card
         detailDate.textContent = release.date;
         detailBadge.textContent = item.type;
@@ -238,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Generate draft Tweet
         const draftTweet = generateDefaultTweet(release.date, item.type, item.body, release.link);
+        defaultDraft = draftTweet; // Almacena el borrador por defecto
         tweetTextarea.value = draftTweet;
         updateCharCount();
     }
@@ -315,6 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!releaseData) return;
 
         const dateGroups = document.querySelectorAll('.date-group');
+        let totalVisibleCards = 0;
         
         dateGroups.forEach(group => {
             const cards = group.querySelectorAll('.update-card');
@@ -332,6 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (matchesQuery) {
                     card.classList.remove('hidden');
                     visibleCardsCount++;
+                    totalVisibleCards++;
                 } else {
                     card.classList.add('hidden');
                 }
@@ -344,6 +358,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 group.classList.add('hidden');
             }
         });
+
+        // Controlar el estado vacío de la búsqueda
+        if (totalVisibleCards === 0) {
+            emptySearchState.classList.remove('hidden');
+            feedContainer.classList.add('hidden');
+        } else {
+            emptySearchState.classList.add('hidden');
+            feedContainer.classList.remove('hidden');
+        }
     }
 
     /* -------------------------------------------------------------
@@ -432,6 +455,30 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.addEventListener('transitionend', () => {
             toast.remove();
         });
+    }
+
+    /* -------------------------------------------------------------
+     * Mejoras de UX (Controladores de Acciones)
+     * ------------------------------------------------------------- */
+    function closeMobileDetail() {
+        document.querySelector('.app-container').classList.remove('active-detail');
+        selectedItem = null;
+        document.querySelectorAll('.update-card').forEach(card => card.classList.remove('active'));
+        detailCard.classList.add('hidden');
+        emptyDetailState.classList.remove('hidden');
+    }
+
+    function resetDraftTweet() {
+        if (!selectedItem) return;
+        tweetTextarea.value = defaultDraft;
+        updateCharCount();
+        showToast('Borrador original restablecido', 'info');
+    }
+
+    function clearSearch() {
+        searchInput.value = '';
+        handleSearch();
+        searchInput.focus();
     }
 
     /* -------------------------------------------------------------

@@ -72,6 +72,16 @@
                 <div id="feed-container" class="feed-container hidden">
                     <!-- Dynamic entries will be loaded here -->
                 </div>
+
+                <!-- Empty Search State -->
+                <div id="empty-search-state" class="empty-state hidden">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </div>
+                    <h3>No hay coincidencias</h3>
+                    <p>No encontramos ninguna nota de versión que coincida con tu búsqueda. Intenta con otros términos.</p>
+                    <button id="clear-search-btn" class="btn btn-secondary" style="margin-top: 1rem;">Limpiar filtro</button>
+                </div>
             </section>
 
             <!-- Right Pane: Detail & Composer -->
@@ -90,6 +100,9 @@
                 <!-- Detail Content & Composer -->
                 <div id="detail-card" class="detail-card hidden">
                     <div class="detail-header">
+                        <button id="close-detail-btn" class="btn-secondary-icon mobile-close-btn" aria-label="Cerrar detalle" title="Volver al historial">
+                            <i class="fa-solid fa-arrow-left"></i>
+                        </button>
                         <div class="detail-meta">
                             <span id="detail-date" class="detail-date">-</span>
                             <span id="detail-badge" class="badge badge-default">-</span>
@@ -113,7 +126,12 @@
                                 <i class="fa-brands fa-x-twitter"></i>
                                 <h3>Compartir en X (Twitter)</h3>
                             </div>
-                            <span class="char-counter" id="char-counter-container"><span id="char-count">0</span>/280</span>
+                            <div class="composer-controls" style="display: flex; align-items: center; gap: 0.5rem;">
+                                <button id="reset-draft-btn" class="btn-copy-card" title="Restablecer borrador original" aria-label="Restablecer borrador original">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </button>
+                                <span class="char-counter" id="char-counter-container"><span id="char-count">0</span>/280</span>
+                            </div>
                         </div>
                         
                         <div class="textarea-wrapper">
