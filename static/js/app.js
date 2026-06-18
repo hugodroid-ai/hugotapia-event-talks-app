@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'btn-copy-card';
-                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i>';
                 copyBtn.title = 'Copiar borrador de tuit';
                 copyBtn.setAttribute('aria-label', 'Copiar borrador de tuit al portapapeles');
                 
@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             showToast('¡Borrador de tuit copiado al portapapeles!', 'success');
                             copyBtn.innerHTML = '<i class="fa-solid fa-check" style="color: var(--color-badge-feature)"></i>';
                             setTimeout(() => {
-                                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                                copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i>';
                             }, 2000);
                         })
                         .catch(err => {

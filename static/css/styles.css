@@ -44,19 +44,19 @@
 
 /* Light Theme Variables Override */
 :root.light-theme {
-    --color-bg-base: #f1f5f9;
-    --color-bg-surface: rgba(255, 255, 255, 0.75);
-    --color-bg-surface-hover: rgba(255, 255, 255, 0.95);
-    --color-border: rgba(15, 23, 42, 0.08);
-    --color-border-focus: rgba(59, 130, 246, 0.5);
+    --color-bg-base: #f8fafc;
+    --color-bg-surface: #ffffff;
+    --color-bg-surface-hover: #f1f5f9;
+    --color-border: #cbd5e1;
+    --color-border-focus: #3b82f6;
     
     --color-text-primary: #0f172a;
     --color-text-secondary: #334155;
-    --color-text-muted: #64748b;
+    --color-text-muted: #475569;
     
-    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.04), 0 2px 4px -1px rgba(15, 23, 42, 0.02);
-    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
-    --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.08);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1), 0 4px 6px -2px rgba(15, 23, 42, 0.05);
+    --shadow-glow: 0 0 15px rgba(59, 130, 246, 0.15);
 }
 
 * {
@@ -937,22 +937,24 @@ body {
 }
 
 .btn-copy-card {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     color: var(--color-text-muted);
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 0.2rem;
-    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
     transition: var(--transition-fast);
 }
 
 .btn-copy-card:hover {
     color: var(--color-text-primary);
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
 }
 
 /* -------------------------------------------------------------
@@ -962,21 +964,28 @@ body {
     background-color: var(--color-bg-base);
 }
 
+:root.light-theme .logo-text h1 {
+    background: linear-gradient(to right, #0f172a, #334155);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
 :root.light-theme .app-header,
 :root.light-theme .feed-section,
 :root.light-theme .detail-section {
     background: var(--color-bg-surface);
     border-color: var(--color-border);
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
 }
 
 :root.light-theme .update-card {
-    background: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    background: #ffffff;
+    border-color: rgba(15, 23, 42, 0.08);
 }
 
 :root.light-theme .update-card:hover {
-    background: rgba(255, 255, 255, 0.95);
-    border-color: rgba(15, 23, 42, 0.15);
+    background: #f8fafc;
+    border-color: rgba(15, 23, 42, 0.18);
     box-shadow: var(--shadow-sm);
 }
 
@@ -1002,6 +1011,7 @@ body {
 
 :root.light-theme .detail-header {
     background: rgba(15, 23, 42, 0.02);
+    border-bottom-color: var(--color-border);
 }
 
 :root.light-theme .detail-body {
@@ -1009,9 +1019,9 @@ body {
 }
 
 :root.light-theme .detail-body code {
-    background: rgba(15, 23, 42, 0.05);
+    background: #f1f5f9;
     color: #db2777;
-    border-color: rgba(15, 23, 42, 0.08);
+    border-color: #cbd5e1;
 }
 
 :root.light-theme .status-tag {
@@ -1019,9 +1029,17 @@ body {
 }
 
 :root.light-theme .search-filter input {
-    background: rgba(255, 255, 255, 0.9);
+    background: #ffffff;
     color: #0f172a;
-    border-color: rgba(15, 23, 42, 0.12);
+    border-color: #cbd5e1;
+}
+
+:root.light-theme .search-filter input:focus {
+    border-color: var(--color-primary);
+}
+
+:root.light-theme .search-filter input::placeholder {
+    color: #64748b;
 }
 
 :root.light-theme .btn-accent {
@@ -1048,9 +1066,16 @@ body {
     border-color: rgba(15, 23, 42, 0.2);
 }
 
+:root.light-theme .btn-copy-card {
+    background: rgba(15, 23, 42, 0.03);
+    border-color: rgba(15, 23, 42, 0.08);
+    color: var(--color-text-muted);
+}
+
 :root.light-theme .btn-copy-card:hover {
-    background: rgba(15, 23, 42, 0.06);
-    color: #0f172a;
+    background: rgba(15, 23, 42, 0.08);
+    border-color: rgba(15, 23, 42, 0.15);
+    color: var(--color-text-primary);
 }
 
 :root.light-theme .toast {
