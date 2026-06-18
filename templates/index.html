@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes - Tracker & Tweeter</title>
+    <meta name="description" content="Visualiza y comparte las últimas notas de versión de Google Cloud BigQuery en X (Twitter).">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation / Header -->
+        <header class="app-header">
+            <div class="header-logo">
+                <div class="logo-icon">
+                    <i class="fa-solid fa-cloud-bolt"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery Notes</h1>
+                    <p>Monitoreo y difusión de notas de versión</p>
+                </div>
+            </div>
+            
+            <div class="header-actions">
+                <div id="status-tag" class="status-tag">
+                    <span class="status-dot"></span>
+                    <span id="status-text">Cargando...</span>
+                </div>
+                <button id="refresh-btn" class="btn btn-primary" aria-label="Actualizar notas de versión">
+                    <i class="fa-solid fa-arrows-rotate btn-icon" id="refresh-icon"></i>
+                    <span>Actualizar</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dashboard Layout -->
+        <main class="app-main">
+            <!-- Left Pane: Release Notes Feed -->
+            <section class="feed-section" aria-labelledby="feed-title">
+                <div class="section-header">
+                    <h2 id="feed-title">Historial de Cambios</h2>
+                    <div class="search-filter">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Filtrar por palabra clave o tipo..." aria-label="Filtrar notas de versión">
+                    </div>
+                </div>
+                
+                <!-- Loading State -->
+                <div id="feed-loading" class="loading-state">
+                    <div class="spinner-large"></div>
+                    <p>Descargando feeds de Google Cloud...</p>
+                </div>
+
+                <!-- Feed Container -->
+                <div id="feed-container" class="feed-container hidden">
+                    <!-- Dynamic entries will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Right Pane: Detail & Composer -->
+            <section class="detail-section" aria-labelledby="detail-title">
+                <h2 id="detail-title" class="sr-only">Detalles y Publicación</h2>
+                
+                <!-- Empty State -->
+                <div id="empty-detail-state" class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-envelope-open-text"></i>
+                    </div>
+                    <h3>Ninguna actualización seleccionada</h3>
+                    <p>Selecciona una nota de versión a la izquierda para ver su contenido completo, generar un tuit adaptado y compartirlo.</p>
+                </div>
+
+                <!-- Detail Content & Composer -->
+                <div id="detail-card" class="detail-card hidden">
+                    <div class="detail-header">
+                        <div class="detail-meta">
+                            <span id="detail-date" class="detail-date">-</span>
+                            <span id="detail-badge" class="badge badge-default">-</span>
+                        </div>
+                        <a id="detail-link" href="#" target="_blank" class="external-link" rel="noopener noreferrer">
+                            Ver original <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </a>
+                    </div>
+                    
+                    <div class="detail-scrollable">
+                        <div class="detail-body-title">Detalles de la versión:</div>
+                        <div id="detail-body" class="detail-body">
+                            <!-- HTML content injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Twitter Composer Card -->
+                    <div class="composer-card">
+                        <div class="composer-header">
+                            <div class="composer-title">
+                                <i class="fa-brands fa-x-twitter"></i>
+                                <h3>Compartir en X (Twitter)</h3>
+                            </div>
+                            <span class="char-counter" id="char-counter-container"><span id="char-count">0</span>/280</span>
+                        </div>
+                        
+                        <div class="textarea-wrapper">
+                            <textarea id="tweet-textarea" rows="4" maxlength="280" placeholder="Redacta tu tuit aquí..." aria-label="Texto del tuit"></textarea>
+                        </div>
+                        
+                        <div class="composer-actions">
+                            <button id="tweet-btn" class="btn btn-accent btn-full">
+                                <i class="fa-brands fa-x-twitter"></i>
+                                <span>Publicar Tuit</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

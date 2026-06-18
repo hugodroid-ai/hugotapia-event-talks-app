@@ -1,0 +1,404 @@
+/* -------------------------------------------------------------
+ * BigQuery Release Notes Tracker - Client Script
+ * ------------------------------------------------------------- */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // DOM Elements
+    const refreshBtn = document.getElementById('refresh-btn');
+    const refreshIcon = document.getElementById('refresh-icon');
+    const statusTag = document.getElementById('status-tag');
+    const statusText = document.getElementById('status-text');
+    const searchInput = document.getElementById('search-input');
+    const feedLoading = document.getElementById('feed-loading');
+    const feedContainer = document.getElementById('feed-container');
+    const emptyDetailState = document.getElementById('empty-detail-state');
+    const detailCard = document.getElementById('detail-card');
+    const detailDate = document.getElementById('detail-date');
+    const detailBadge = document.getElementById('detail-badge');
+    const detailLink = document.getElementById('detail-link');
+    const detailBody = document.getElementById('detail-body');
+    const tweetTextarea = document.getElementById('tweet-textarea');
+    const charCount = document.getElementById('char-count');
+    const tweetBtn = document.getElementById('tweet-btn');
+    const toastContainer = document.getElementById('toast-container');
+
+    // Global state
+    let releaseData = null;
+    let selectedItem = null;
+
+    // Initial Fetch
+    loadReleases();
+
+    // Event Listeners
+    refreshBtn.addEventListener('click', () => loadReleases(true));
+    searchInput.addEventListener('input', handleSearch);
+    tweetTextarea.addEventListener('input', updateCharCount);
+    tweetBtn.addEventListener('click', publishTweet);
+
+    /* -------------------------------------------------------------
+     * API Fetching
+     * ------------------------------------------------------------- */
+    async function loadReleases(forceRefresh = false) {
+        setLoadingState(true);
+        const endpoint = forceRefresh ? '/api/releases/refresh' : '/api/releases';
+
+        try {
+            const response = await fetch(endpoint);
+            if (!response.ok) {
+                throw new Error(`Error de red: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            releaseData = data.releases;
+            renderFeed(releaseData);
+            
+            // Update last updated info
+            const updateTime = new Date(data.updated_at * 1000);
+            const timeString = updateTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            if (data.stale) {
+                setStatus('Desconectado (Usando caché)', 'error');
+                showToast('No se pudieron obtener datos nuevos. Cargando datos desde la caché.', 'error');
+            } else {
+                setStatus(`Actualizado: ${timeString}`, 'success');
+                if (forceRefresh) {
+                    showToast('¡Notas de versión actualizadas con éxito!', 'success');
+                }
+            }
+        } catch (error) {
+            console.error('Fetch error:', error);
+            setStatus('Error al actualizar', 'error');
+            showToast(`Error: ${error.message}. Por favor, inténtalo de nuevo.`, 'error');
+        } finally {
+            setLoadingState(false);
+        }
+    }
+
+    function setLoadingState(isLoading) {
+        if (isLoading) {
+            refreshBtn.disabled = true;
+            refreshIcon.classList.add('spinning');
+            feedLoading.classList.remove('hidden');
+            feedContainer.classList.add('hidden');
+            setStatus('Cargando...', 'loading');
+        } else {
+            refreshBtn.disabled = false;
+            refreshIcon.classList.remove('spinning');
+            feedLoading.classList.add('hidden');
+            feedContainer.classList.remove('hidden');
+        }
+    }
+
+    function setStatus(text, type) {
+        statusText.textContent = text;
+        statusTag.className = 'status-tag'; // Reset
+        if (type === 'loading') {
+            statusTag.classList.add('loading');
+        } else if (type === 'error') {
+            statusTag.classList.add('error');
+        }
+    }
+
+    /* -------------------------------------------------------------
+     * Rendering Feed
+     * ------------------------------------------------------------- */
+    function renderFeed(releases) {
+        feedContainer.innerHTML = '';
+        
+        if (!releases || releases.length === 0) {
+            feedContainer.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fa-solid fa-folder-open"></i></div>
+                    <h3>No se encontraron actualizaciones</h3>
+                    <p>No pudimos encontrar notas de versión en este momento.</p>
+                </div>
+            `;
+            return;
+        }
+
+        releases.forEach(release => {
+            if (release.items.length === 0) return;
+
+            const group = document.createElement('div');
+            group.className = 'date-group';
+            group.dataset.date = release.date;
+
+            const heading = document.createElement('div');
+            heading.className = 'date-heading';
+            heading.textContent = release.date;
+            group.appendChild(heading);
+
+            release.items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'update-card';
+                card.dataset.itemId = item.id;
+                
+                // Keep references for click handler
+                card.addEventListener('click', () => selectReleaseItem(item, release));
+
+                const header = document.createElement('div');
+                header.className = 'card-header';
+                
+                const badge = document.createElement('span');
+                badge.className = `badge ${getBadgeClass(item.type)}`;
+                badge.textContent = item.type;
+                header.appendChild(badge);
+
+                // Add small format indicators inside card
+                const title = document.createElement('span');
+                title.className = 'card-title';
+                title.textContent = 'BigQuery';
+                header.appendChild(title);
+
+                card.appendChild(header);
+
+                // Body content summary (strip HTML first)
+                const summary = document.createElement('p');
+                summary.className = 'card-summary';
+                summary.textContent = stripHtml(item.body);
+                card.appendChild(summary);
+
+                group.appendChild(card);
+            });
+
+            feedContainer.appendChild(group);
+        });
+
+        // If we previously had a selected item, let's re-highlight or keep it
+        if (selectedItem) {
+            const cardElement = document.querySelector(`[data-item-id="${selectedItem.id}"]`);
+            if (cardElement) {
+                cardElement.classList.add('active');
+            }
+        }
+    }
+
+    function selectReleaseItem(item, release) {
+        selectedItem = { item, release };
+
+        // Toggle active states in list
+        document.querySelectorAll('.update-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        
+        const cardElement = document.querySelector(`[data-item-id="${item.id}"]`);
+        if (cardElement) {
+            cardElement.classList.add('active');
+        }
+
+        // Display details
+        emptyDetailState.classList.add('hidden');
+        detailCard.classList.remove('hidden');
+
+        // Populate card
+        detailDate.textContent = release.date;
+        detailBadge.textContent = item.type;
+        detailBadge.className = `badge ${getBadgeClass(item.type)}`;
+        detailLink.href = release.link || 'https://cloud.google.com/bigquery/docs/release-notes';
+        
+        // Inject HTML body (safely formatted by Google Cloud)
+        detailBody.innerHTML = item.body;
+
+        // Generate draft Tweet
+        const draftTweet = generateDefaultTweet(release.date, item.type, item.body, release.link);
+        tweetTextarea.value = draftTweet;
+        updateCharCount();
+    }
+
+    /* -------------------------------------------------------------
+     * Tweet Operations & Formatting
+     * ------------------------------------------------------------- */
+    function generateDefaultTweet(date, type, htmlBody, url) {
+        const plainText = stripHtml(htmlBody).replace(/\s+/g, ' ').trim();
+        const cleanUrl = url || 'https://cloud.google.com/bigquery/docs/release-notes';
+        
+        const prefix = `BigQuery (${date}) | ${type}: `;
+        // Emphasize the link with a descriptive emoji
+        const suffix = `\n\nDetalles: ${cleanUrl}\n#BigQuery #GoogleCloud`;
+        
+        // Twitter URL is counted as exactly 23 characters.
+        // Let's truncate plainText if the total size exceeds the limit.
+        const urlCharacterWeight = 23;
+        const metadataLength = prefix.length + `\n\nDetalles: `.length + urlCharacterWeight + `\n#BigQuery #GoogleCloud`.length;
+        const availableLength = 280 - metadataLength - 8; // 8 characters for quotes and safety buffer
+
+        let bodyText = plainText;
+        if (bodyText.length > availableLength) {
+            bodyText = bodyText.substring(0, availableLength - 3) + '...';
+        }
+
+        return `${prefix}"${bodyText}"${suffix}`;
+    }
+
+    function updateCharCount() {
+        const text = tweetTextarea.value;
+        const count = calculateTwitterLength(text);
+        
+        charCount.textContent = count;
+        
+        // Handle warning and error styling
+        const container = document.getElementById('char-counter-container');
+        container.className = 'char-counter';
+        
+        if (count > 280) {
+            container.classList.add('danger');
+            tweetBtn.disabled = true;
+        } else if (count > 250) {
+            container.classList.add('warning');
+            tweetBtn.disabled = false;
+        } else {
+            tweetBtn.disabled = false;
+        }
+    }
+
+    // Twitter Web Intent Publish
+    function publishTweet() {
+        const text = tweetTextarea.value.trim();
+        if (!text) {
+            showToast('El contenido del tuit está vacío.', 'error');
+            return;
+        }
+        
+        if (calculateTwitterLength(text) > 280) {
+            showToast('El tuit supera el límite de 280 caracteres.', 'error');
+            return;
+        }
+
+        const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+        window.open(tweetUrl, '_blank', 'noopener,noreferrer');
+        showToast('¡Redirigiendo al editor de tuits de X (Twitter)!', 'info');
+    }
+
+    /* -------------------------------------------------------------
+     * Searching and Filtering
+     * ------------------------------------------------------------- */
+    function handleSearch() {
+        const query = searchInput.value.toLowerCase().trim();
+        
+        if (!releaseData) return;
+
+        const dateGroups = document.querySelectorAll('.date-group');
+        
+        dateGroups.forEach(group => {
+            const cards = group.querySelectorAll('.update-card');
+            let visibleCardsCount = 0;
+
+            cards.forEach(card => {
+                const badgeText = card.querySelector('.badge').textContent.toLowerCase();
+                const summaryText = card.querySelector('.card-summary').textContent.toLowerCase();
+                const dateText = group.dataset.date.toLowerCase();
+
+                const matchesQuery = badgeText.includes(query) || 
+                                     summaryText.includes(query) || 
+                                     dateText.includes(query);
+
+                if (matchesQuery) {
+                    card.classList.remove('hidden');
+                    visibleCardsCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            // Hide the entire date group header if no visible cards are inside it
+            if (visibleCardsCount > 0) {
+                group.classList.remove('hidden');
+            } else {
+                group.classList.add('hidden');
+            }
+        });
+    }
+
+    /* -------------------------------------------------------------
+     * Helper Utilities
+     * ------------------------------------------------------------- */
+    function stripHtml(html) {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        // Also strip any multiple consecutive newlines / tabs
+        return temp.textContent || temp.innerText || '';
+    }
+
+    function getBadgeClass(type) {
+        const t = type.toLowerCase().trim();
+        if (t.includes('feature')) return 'badge-feature';
+        if (t.includes('announcement')) return 'badge-announcement';
+        if (t.includes('fix')) return 'badge-fix';
+        if (t.includes('security')) return 'badge-security';
+        if (t.includes('deprecat')) return 'badge-deprecated';
+        return 'badge-default';
+    }
+
+    // Twitter-specific string length calculator (counting URLs as 23 characters)
+    function calculateTwitterLength(text) {
+        // Match standard URL regex
+        const urlRegex = /https?:\/\/[^\s$.?#].[^\s]*/gi;
+        const urls = text.match(urlRegex) || [];
+        
+        let length = text.length;
+        
+        // Subtract actual length of each URL, add 23 for each
+        urls.forEach(url => {
+            length = length - url.length + 23;
+        });
+        
+        return length;
+    }
+
+    /* -------------------------------------------------------------
+     * Toast System
+     * ------------------------------------------------------------- */
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        const content = document.createElement('div');
+        content.className = 'toast-content';
+
+        const icon = document.createElement('i');
+        icon.className = 'toast-icon ';
+        if (type === 'success') {
+            icon.className += 'fa-solid fa-circle-check';
+        } else if (type === 'error') {
+            icon.className += 'fa-solid fa-circle-exclamation';
+        } else {
+            icon.className += 'fa-solid fa-circle-info';
+        }
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = message;
+
+        content.appendChild(icon);
+        content.appendChild(textSpan);
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'toast-close';
+        closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        closeBtn.setAttribute('aria-label', 'Cerrar notificación');
+        closeBtn.addEventListener('click', () => dismissToast(toast));
+
+        toast.appendChild(content);
+        toast.appendChild(closeBtn);
+        toastContainer.appendChild(toast);
+
+        // Auto dismiss after 4 seconds
+        setTimeout(() => {
+            dismissToast(toast);
+        }, 4000);
+    }
+
+    function dismissToast(toast) {
+        if (toast.classList.contains('hiding')) return;
+        toast.classList.add('hiding');
+        
+        // Remove from DOM after transition completes
+        toast.addEventListener('transitionend', () => {
+            toast.remove();
+        });
+    }
+});
