@@ -22,11 +22,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const tweetBtn = document.getElementById('tweet-btn');
     const toastContainer = document.getElementById('toast-container');
 
+    // Nuevos Elementos
+    const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const exportCsvBtn = document.getElementById('export-csv-btn');
+
     // Global state
     let releaseData = null;
     let selectedItem = null;
 
     // Initial Fetch
+    initializeTheme();
     loadReleases();
 
     // Event Listeners
@@ -34,6 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.addEventListener('input', handleSearch);
     tweetTextarea.addEventListener('input', updateCharCount);
     tweetBtn.addEventListener('click', publishTweet);
+    themeToggle.addEventListener('click', toggleTheme);
+    exportCsvBtn.addEventListener('click', exportToCSV);
 
     /* -------------------------------------------------------------
      * API Fetching
@@ -149,11 +157,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 badge.textContent = item.type;
                 header.appendChild(badge);
 
-                // Add small format indicators inside card
-                const title = document.createElement('span');
-                title.className = 'card-title';
-                title.textContent = 'BigQuery';
-                header.appendChild(title);
+                // Contenedor de acciones con botón de copiar borrador de tuit
+                const actionsContainer = document.createElement('div');
+                actionsContainer.className = 'card-actions';
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'btn-copy-card';
+                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                copyBtn.title = 'Copiar borrador de tuit';
+                copyBtn.setAttribute('aria-label', 'Copiar borrador de tuit al portapapeles');
+                
+                copyBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evita seleccionar la tarjeta
+                    const tweetText = generateDefaultTweet(release.date, item.type, item.body, release.link);
+                    navigator.clipboard.writeText(tweetText)
+                        .then(() => {
+                            showToast('¡Borrador de tuit copiado al portapapeles!', 'success');
+                            copyBtn.innerHTML = '<i class="fa-solid fa-check" style="color: var(--color-badge-feature)"></i>';
+                            setTimeout(() => {
+                                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                            }, 2000);
+                        })
+                        .catch(err => {
+                            console.error('Error al copiar:', err);
+                            showToast('No se pudo copiar el texto.', 'error');
+                        });
+                });
+
+                actionsContainer.appendChild(copyBtn);
+                header.appendChild(actionsContainer);
 
                 card.appendChild(header);
 
@@ -400,5 +432,71 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.addEventListener('transitionend', () => {
             toast.remove();
         });
+    }
+
+    /* -------------------------------------------------------------
+     * Tema Claro/Oscuro
+     * ------------------------------------------------------------- */
+    function initializeTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') {
+            document.documentElement.classList.add('light-theme');
+            themeIcon.className = 'fa-solid fa-moon';
+        } else {
+            document.documentElement.classList.remove('light-theme');
+            themeIcon.className = 'fa-solid fa-sun';
+        }
+    }
+
+    function toggleTheme() {
+        const isLight = document.documentElement.classList.toggle('light-theme');
+        if (isLight) {
+            themeIcon.className = 'fa-solid fa-moon';
+            localStorage.setItem('theme', 'light');
+            showToast('Modo claro activado', 'info');
+        } else {
+            themeIcon.className = 'fa-solid fa-sun';
+            localStorage.setItem('theme', 'dark');
+            showToast('Modo oscuro activado', 'info');
+        }
+    }
+
+    /* -------------------------------------------------------------
+     * Exportación CSV
+     * ------------------------------------------------------------- */
+    function exportToCSV() {
+        if (!releaseData || releaseData.length === 0) {
+            showToast('No hay datos disponibles para exportar.', 'error');
+            return;
+        }
+
+        const csvRows = [];
+        csvRows.push(['Fecha', 'Tipo', 'URL', 'Contenido']);
+
+        releaseData.forEach(release => {
+            const date = release.date;
+            const url = release.link || '';
+            
+            release.items.forEach(item => {
+                const type = item.type;
+                const plainBody = stripHtml(item.body).replace(/\s+/g, ' ').trim();
+                csvRows.push([date, type, url, plainBody]);
+            });
+        });
+
+        const csvString = csvRows.map(row => 
+            row.map(val => `"${val.replace(/"/g, '""')}"`).join(',')
+        ).join('\n');
+
+        const blob = new Blob(['\ufeff' + csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `bigquery_release_notes_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast('¡Archivo CSV descargado con éxito!', 'success');
     }
 });
